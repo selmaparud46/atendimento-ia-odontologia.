@@ -1,0 +1,880 @@
+{
+  "name": "Chatbot WhatsApp - Clínica Odontológica",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-twilio",
+        "options": {
+          "noResponseBody": true
+        }
+      },
+      "id": "4ed26a3c-b6e6-4fb4-827f-d4d680277009",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        -512
+      ],
+      "webhookId": "62a38730-83a3-4836-ae0f-653d5cc0b6de"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.body?.Body }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "leftValue": "={{ $json.body?.From }}",
+              "rightValue": "whatsapp:",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0db2f88f-1c36-42c5-9b3e-f26587731679",
+      "name": "Only Text Messages",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        272,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "wa_id",
+              "value": "={{ $json.body.From.replace('whatsapp:', '').replace('+', '') }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "text",
+              "value": "={{ $json.body.Body.trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "phone_number_id",
+              "value": "={{ $json.body.To }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "dc3623ee-4164-481c-bce5-94a60f19c030",
+      "name": "Extract Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        496,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "qd251LyQH9VTEAKm",
+          "cachedResultName": "whatsapp_sessoes_clinica"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "wa_id",
+              "keyValue": "={{ $json.wa_id }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "a3fa31cd-4249-4f19-8812-e92063226230",
+      "name": "Get Session",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        448
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.step }}",
+                    "rightValue": "ask_name",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ask_name"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.step }}",
+                    "rightValue": "ask_phone",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ask_phone"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.step }}",
+                    "rightValue": "ask_treatment",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ask_treatment"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "new_conversation"
+        }
+      },
+      "id": "9f58406f-a182-4f85-8460-454d403ad509",
+      "name": "Route by Step",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        944,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "qd251LyQH9VTEAKm",
+          "cachedResultName": "whatsapp_sessoes_clinica"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "wa_id",
+              "keyValue": "={{ $('Extract Message').item.json.wa_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "wa_id": "={{ $('Extract Message').item.json.wa_id }}",
+            "step": "ask_phone",
+            "patient_name": "={{ $('Extract Message').item.json.text }}"
+          },
+          "schema": [
+            {
+              "id": "wa_id",
+              "displayName": "wa_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "patient_name",
+              "displayName": "patient_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "patient_phone",
+              "displayName": "patient_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "80b616a7-06ef-4f09-9b5b-9728461c7f3d",
+      "name": "Save Name",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "from": "+17372508034",
+        "to": "=+{{ $('Extract Message').item.json.wa_id }}",
+        "toWhatsapp": true,
+        "message": "=Obrigado, {{ $('Extract Message').item.json.text }}! Qual é o seu telefone para contato (com DDD)?",
+        "options": {}
+      },
+      "id": "f7ffdb90-e38f-4963-9824-a23469647bd1",
+      "name": "Ask Phone",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        320
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "lmqWS4Z8oDeQWJdG",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "qd251LyQH9VTEAKm",
+          "cachedResultName": "whatsapp_sessoes_clinica"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "wa_id",
+              "keyValue": "={{ $('Extract Message').item.json.wa_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "wa_id": "={{ $('Extract Message').item.json.wa_id }}",
+            "step": "ask_treatment",
+            "patient_phone": "={{ $('Extract Message').item.json.text }}"
+          },
+          "schema": [
+            {
+              "id": "wa_id",
+              "displayName": "wa_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "patient_name",
+              "displayName": "patient_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "patient_phone",
+              "displayName": "patient_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "505d6030-d184-485b-84af-08835a56f6b3",
+      "name": "Save Phone",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "from": "+17372508034",
+        "to": "=+{{ $('Extract Message').item.json.wa_id }}",
+        "toWhatsapp": true,
+        "message": "Perfeito! Qual tratamento você deseja? (ex.: limpeza, clareamento, ortodontia, implante, canal, avaliação)",
+        "options": {}
+      },
+      "id": "8437ce61-e0e9-4f27-8705-b14f2370cb0e",
+      "name": "Ask Treatment",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        512
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "lmqWS4Z8oDeQWJdG",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1U0iYjVBtj2aMDOaRa5S9o1wN2DxpNqiF7Y3RiBUPbpU",
+          "mode": "list",
+          "cachedResultName": "Pacientes Clinica",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U0iYjVBtj2aMDOaRa5S9o1wN2DxpNqiF7Y3RiBUPbpU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Página1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U0iYjVBtj2aMDOaRa5S9o1wN2DxpNqiF7Y3RiBUPbpU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Data": "={{ $now.setZone('America/Sao_Paulo').toFormat('dd/MM/yyyy HH:mm') }}",
+            "Nome": "={{ $('Route by Step').item.json.patient_name }}",
+            "Telefone": "={{ $('Route by Step').item.json.patient_phone }}",
+            "Tratamento": "={{ $('Extract Message').item.json.text }}",
+            "WhatsApp": "={{ $('Extract Message').item.json.wa_id }}"
+          },
+          "schema": [
+            {
+              "id": "Data",
+              "displayName": "Data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Nome",
+              "displayName": "Nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Telefone",
+              "displayName": "Telefone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tratamento",
+              "displayName": "Tratamento",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "WhatsApp",
+              "displayName": "WhatsApp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5fb7ff1d-59c9-4bf0-93fb-b27b551c6841",
+      "name": "Save to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        800,
+        704
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ffUTuKE4bBu4prJW",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "qd251LyQH9VTEAKm",
+          "cachedResultName": "whatsapp_sessoes_clinica"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "wa_id",
+              "keyValue": "={{ $('Extract Message').item.json.wa_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3d489a74-9483-455b-880d-5d5d5d597db1",
+      "name": "End Session",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "from": "+17372508034",
+        "to": "=+{{ $('Extract Message').item.json.wa_id }}",
+        "toWhatsapp": true,
+        "message": "=Obrigado, {{ $('Route by Step').item.json.patient_name }}! Recebemos seu interesse em {{ $('Extract Message').item.json.text }}. Nossa equipe entrará em contato em breve para agendar sua consulta.",
+        "options": {}
+      },
+      "id": "2ff04094-5a6f-4051-ad97-5d62f2818fa5",
+      "name": "Send Confirmation",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        704
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "lmqWS4Z8oDeQWJdG",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "qd251LyQH9VTEAKm",
+          "cachedResultName": "whatsapp_sessoes_clinica"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "wa_id": "={{ $('Extract Message').item.json.wa_id }}",
+            "step": "ask_name"
+          },
+          "schema": [
+            {
+              "id": "wa_id",
+              "displayName": "wa_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "patient_name",
+              "displayName": "patient_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "patient_phone",
+              "displayName": "patient_phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "be975e97-ea60-4d70-99d8-f618af4031b5",
+      "name": "Start Session",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "from": "+17372508034",
+        "to": "=+{{ $('Extract Message').item.json.wa_id }}",
+        "toWhatsapp": true,
+        "message": "Olá! Bem-vindo(a) à nossa clínica odontológica. Para iniciarmos seu atendimento, qual é o seu nome completo?",
+        "options": {}
+      },
+      "id": "beaf6578-9451-4382-9718-1e176febe2b0",
+      "name": "Ask Name",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        128
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "lmqWS4Z8oDeQWJdG",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "a7972161-d756-4643-825d-d1f7db98dcc2",
+        "options": {}
+      },
+      "id": "22714e70-4085-4197-9044-e77225ff68da",
+      "name": "Webhook1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        288
+      ],
+      "webhookId": "a7972161-d756-4643-825d-d1f7db98dcc2"
+    },
+    {
+      "parameters": {
+        "from": "+17372508034",
+        "to": "+5522997301492",
+        "toWhatsapp": true,
+        "message": "Teste de funcionamento do Chatbot Odontológico!",
+        "options": {}
+      },
+      "id": "9c76c72a-c8d9-47bf-ba86-fac31cf4e926",
+      "name": "Send an SMS/MMS/WhatsApp message",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        464,
+        -192
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "lmqWS4Z8oDeQWJdG",
+          "name": "Twilio account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Only Text Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Only Text Messages": {
+      "main": [
+        [
+          {
+            "node": "Extract Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message": {
+      "main": [
+        [
+          {
+            "node": "Get Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Session": {
+      "main": [
+        [
+          {
+            "node": "Route by Step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Step": {
+      "main": [
+        [
+          {
+            "node": "Save Name",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save Phone",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Start Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Name": {
+      "main": [
+        [
+          {
+            "node": "Ask Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Phone": {
+      "main": [
+        [
+          {
+            "node": "Ask Treatment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "End Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "End Session": {
+      "main": [
+        [
+          {
+            "node": "Send Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Session": {
+      "main": [
+        [
+          {
+            "node": "Ask Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "6b17a798-6852-4f85-a1ee-ec3c9c5de5d2",
+  "meta": {
+    "instanceId": "4cf943e9f5484cb2299acddab6ac7453209cd656b9782ee988ee6c26d293fba8"
+  },
+  "nodeGroups": [
+    {
+      "id": "9836739f-1531-4f38-9150-a2b6e85d3099",
+      "name": "Read patient message",
+      "nodeIds": [
+        "0db2f88f-1c36-42c5-9b3e-f26587731679",
+        "dc3623ee-4164-481c-bce5-94a60f19c030",
+        "a3fa31cd-4249-4f19-8812-e92063226230",
+        "9f58406f-a182-4f85-8460-454d403ad509"
+      ],
+      "description": "Keeps only text messages, identifies the patient and checks which question they are answering"
+    },
+    {
+      "id": "fb6adc92-9f47-4716-9dde-82cdd7365e1e",
+      "name": "Greet new patient",
+      "nodeIds": [
+        "be975e97-ea60-4d70-99d8-f618af4031b5",
+        "beaf6578-9451-4382-9718-1e176febe2b0"
+      ],
+      "description": "First contact: opens a conversation for this number and asks for the full name"
+    },
+    {
+      "id": "7cd422f4-a7ec-4114-b3d7-c585567f5185",
+      "name": "Collect name",
+      "nodeIds": [
+        "80b616a7-06ef-4f09-9b5b-9728461c7f3d",
+        "f7ffdb90-e38f-4963-9824-a23469647bd1"
+      ],
+      "description": "Stores the name the patient sent and asks for a contact phone"
+    },
+    {
+      "id": "7e068634-d7c7-4276-a3f3-90df697ea988",
+      "name": "Collect phone",
+      "nodeIds": [
+        "505d6030-d184-485b-84af-08835a56f6b3",
+        "8437ce61-e0e9-4f27-8705-b14f2370cb0e"
+      ],
+      "description": "Stores the contact phone and asks which treatment the patient wants"
+    },
+    {
+      "id": "8c6a7828-8dd1-424f-9e6e-2a58105b3171",
+      "name": "Register patient request",
+      "nodeIds": [
+        "5fb7ff1d-59c9-4bf0-93fb-b27b551c6841",
+        "3d489a74-9483-455b-880d-5d5d5d597db1",
+        "2ff04094-5a6f-4051-ad97-5d62f2818fa5"
+      ],
+      "description": "Adds name, phone and treatment as a new spreadsheet row, closes the conversation and thanks the patient"
+    }
+  ],
+  "id": "ooPbGm3keNrcfzLP",
+  "tags": []
+}
